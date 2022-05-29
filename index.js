@@ -9,7 +9,7 @@ app.use(express.json());
 
 
 app.get('/', (req, res) => {
-    res.send('Groceteria Warehouse Server Is Running');
+    res.send('MrTools Server Is Running');
 });
 
 app.listen(port, () => {
