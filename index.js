@@ -21,6 +21,7 @@ const run = async () => {
     try {
         await client.connect();
         const productCollection = client.db("mrTools").collection("product");
+        const reviewsCollection = client.db("mrTools").collection("reviews");
 
         // get all products
         app.get('/product', async (req, res) => {
@@ -29,6 +30,26 @@ const run = async () => {
             const products = await cursor.toArray();
             res.send(products);
             console.log('products data send')
+        });
+
+        // get last 3 reviews
+        app.get('/reviews', async (req, res) => {
+            const query = {};
+            const cursor = reviewsCollection.find(query);
+            const reviews = await cursor.toArray();
+            const lastThreeReviews = reviews.reverse().slice(0, 3);
+            res.send(lastThreeReviews);
+            console.log('reviews Send')
+        });
+
+        // post reviews
+        app.post('/reviews', async (req, res) => {
+            const query = {};
+            const options = { upsert: true };
+            const newReview = { $set: req.body };
+            const result = await reviewsCollection.updateOne(query, newReview, options);
+            res.send(result);
+            console.log('review added')
         });
 
     }
