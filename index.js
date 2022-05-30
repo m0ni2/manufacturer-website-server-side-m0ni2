@@ -22,6 +22,7 @@ const run = async () => {
         await client.connect();
         const productCollection = client.db("mrTools").collection("product");
         const reviewsCollection = client.db("mrTools").collection("reviews");
+        const ordersCollection = client.db("mrTools").collection("orders");
 
         // get all products
         app.get('/product', async (req, res) => {
@@ -35,7 +36,6 @@ const run = async () => {
         // get single product
         app.get('/product/:id', async (req, res) => {
             const id = req.params.id;
-            console.log(id)
             const query = { _id: ObjectId(id) };
             const product = await productCollection.findOne(query);
             res.send(product);
@@ -54,12 +54,18 @@ const run = async () => {
 
         // post reviews
         app.post('/reviews', async (req, res) => {
-            const query = {};
-            const options = { upsert: true };
-            const newReview = { $set: req.body };
-            const result = await reviewsCollection.updateOne(query, newReview, options);
+            const newReview = req.body;
+            const result = await reviewsCollection.insertOne(newReview);
             res.send(result);
             console.log('review added')
+        });
+
+
+        app.post('/order', async (req, res) => {
+            const newOrder = req.body;
+            const result = await ordersCollection.insertOne(newOrder);
+            res.send(result);
+            console.log('order added')
         });
 
     }
