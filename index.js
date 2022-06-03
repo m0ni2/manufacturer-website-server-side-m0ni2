@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 
@@ -13,9 +14,26 @@ app.use(express.json());
 
 
 // mongo
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@mrtools.5n8hr.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+
+const verifyJWT = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'Unauthorized Access' });
+    }
+
+    const accessToken = authHeader.split(' ')[1];
+    jwt.verify(accessToken, process.env.PRIVATE_KEY, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden Access' });
+        }
+        req.decoded = decoded;
+        next();
+    });
+
+};
 
 const run = async () => {
     try {
@@ -23,6 +41,17 @@ const run = async () => {
         const productCollection = client.db("mrTools").collection("product");
         const reviewsCollection = client.db("mrTools").collection("reviews");
         const ordersCollection = client.db("mrTools").collection("orders");
+        const usersCollection = client.db("mrTools").collection("users");
+
+        // generate token
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const accessToken = jwt.sign(user, process.env.PRIVATE_KEY, {
+                expiresIn: '1d'
+            });
+            res.send({ accessToken })
+            console.log('accessToken send')
+        });
 
         // get all products
         app.get('/product', async (req, res) => {
@@ -67,6 +96,25 @@ const run = async () => {
             res.send(result);
             console.log('order added')
         });
+
+        app.get('/order/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const cursor = ordersCollection.find(query);
+            const orders = await cursor.toArray();
+            res.send(orders);
+            console.log('orders send')
+        });
+
+        // app.delete('/order/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) };
+        //     const result = await ordersCollection.deleteOne(query);
+        //     req.send(result)
+        //     console.log('data deleted')
+        // })
+
+
 
     }
     finally {
